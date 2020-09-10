@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Upload to browserstack
+      - name: Upload to browserstack and trigger tests
         run: |
            APP_UPLOAD_RESPONSE=$(curl -u "${{ secrets.BROWSERSTACK_USERNAME }}:${{ secrets.BROWSERSTACK_ACCESSKEY }}" -X POST https://api-cloud.browserstack.com/app-automate/upload -F "file=@$GITHUB_WORKSPACE/$(find . -type f -name "*-debug.apk")")
            APP_ID=$(echo $APP_UPLOAD_RESPONSE | jq -r ".app_url")
@@ -24,6 +24,6 @@ jobs:
              UPLOAD_ERROR_MESSAGE=$(echo $APP_UPLOAD_RESPONSE | jq -r ".error")
              echo "App upload failed, reason : ",$UPLOAD_ERROR_MESSAGE
                           exit 1;
-           fi     
-      - name: Trigger autotests
-        run: curl -X POST -H "Accept:application/vnd.github.v3+json" https://api.github.com/repos/NYPL-Simplified/integration-tests-android/actions/workflows/2444436/dispatches -d '{"test_tag":"@smoke","bs_app_link":"$BROWSERSTACK_APP_ID"}'
+           fi
+           curl -X POST -H "Accept:application/vnd.github.v3+json" https://api.github.com/repos/NYPL-Simplified/integration-tests-android/actions/workflows/2444436/dispatches -d '{"test_tag":"@smoke","bs_app_link":"$BROWSERSTACK_APP_ID"}'     
+     
