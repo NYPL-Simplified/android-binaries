@@ -1,0 +1,29 @@
+name: Start test run
+
+on:
+  push:
+    branches: [ SimplyE-Test ]
+    
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Upload to browserstack
+        run: |
+           APP_UPLOAD_RESPONSE=$(curl -u "${{ secrets.BROWSERSTACK_USERNAME }}:${{ secrets.BROWSERSTACK_ACCESSKEY }}" -X POST https://api-cloud.browserstack.com/app-automate/upload -F file=@*-debug.apk)
+           APP_ID=$(echo $APP_UPLOAD_RESPONSE | jq -r ".app_url")
+           if [ $APP_ID != null ]; then
+             echo "Apk uploaded to BrowserStack with app id : ",$APP_ID;
+             echo "export BROWSERSTACK_APP_ID=$APP_ID" >> $BASH_ENV;
+             source $BASH_ENV;
+             echo "Setting value of BROWSERSTACK_APP_ID in environment variables to  ",$APP_ID;
+           else
+             UPLOAD_ERROR_MESSAGE=$(echo $APP_UPLOAD_RESPONSE | jq -r ".error")
+             echo "App upload failed, reason : ",$UPLOAD_ERROR_MESSAGE
+                          exit 1;
+           fi     
+      - name: Trigger autotests
+        run: curl -X POST -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/NYPL-Simplified/integration-tests-android/actions/workflows/2444436/dispatches -d '{"test_tag":"@smoke","bs_app_link":"$BROWSERSTACK_APP_ID"}'
+
