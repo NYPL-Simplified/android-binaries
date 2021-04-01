@@ -2,7 +2,7 @@ name: Start test run
 
 on:
   schedule:
-    - cron:  '0 23 * * 0-4'
+    - cron:  '30 9 * * 0-4'
 
 jobs:
   build:
